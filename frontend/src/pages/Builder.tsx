@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { StepsList } from "../components/StepsList";
 import { FileExplorer } from "../components/FileExplorer";
@@ -14,7 +14,7 @@ import { Loader } from "../components/Loader";
 
 export function Builder() {
   const location = useLocation();
-  const { prompt } = location.state as { prompt: string };
+  const { prompt, model } = location.state as { prompt: string; model: string };
   const [userPrompt, setPrompt] = useState("");
   const [llmMessages, setLlmMessages] = useState<
     { role: "user" | "assistant"; content: string }[]
@@ -153,7 +153,7 @@ export function Builder() {
     );
 
     setLoading(true);
-    const stepsResponse = await axios.post(`${BACKEND_URL}/chat`, {
+    const stepsResponse = await axios.post(`${BACKEND_URL}/chat/${model}`, {
       messages: [...prompts, prompt].map((content) => ({
         role: "user",
         content,
@@ -190,7 +190,7 @@ export function Builder() {
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col">
       <header className="bg-gray-800 border-b border-gray-700 px-6 py-4">
-        <h1 className="text-xl font-semibold text-gray-100">Website Builder</h1>
+        <h1 className="text-xl font-semibold text-gray-100">HyperBuild</h1>
         <p className="text-sm text-gray-400 mt-1">Prompt: {prompt}</p>
       </header>
 
