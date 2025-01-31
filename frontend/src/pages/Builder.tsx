@@ -11,6 +11,13 @@ import { BACKEND_URL } from "../config";
 import { parseXml } from "../steps";
 import { useWebContainer } from "../hooks/useWebContainer";
 import { Loader } from "../components/Loader";
+import {
+  Code2,
+  Command,
+  MessageSquarePlus,
+  Rocket,
+  Sparkles,
+} from "lucide-react";
 
 export function Builder() {
   const location = useLocation();
@@ -26,11 +33,8 @@ export function Builder() {
   const [currentStep, setCurrentStep] = useState(1);
   const [activeTab, setActiveTab] = useState<"code" | "preview">("code");
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
-
   const [steps, setSteps] = useState<Step[]>([]);
-
   const [files, setFiles] = useState<FileItem[]>([]);
-
   useEffect(() => {
     let originalFiles = [...files];
     let updateHappened = false;
@@ -188,88 +192,139 @@ export function Builder() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col">
-      <header className="bg-gray-800 border-b border-gray-700 px-6 py-4">
-        <h1 className="text-xl font-semibold text-gray-100">HyperBuild</h1>
-        <p className="text-sm text-gray-400 mt-1">Prompt: {prompt}</p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      {/* Header */}
+      <header className="bg-gray-800/50 border-b border-gray-700/50 backdrop-blur-sm px-8 py-4 sticky top-0 z-50">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <Command className="w-6 h-6 text-purple-400" />
+              <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">
+                HyperBuild
+              </h1>
+            </div>
+            <div className="h-6 w-px bg-gray-700/50" />
+            <p className="text-sm text-gray-400">
+              <span className="text-gray-500">Prompt:</span>{" "}
+              <span className="text-gray-300">{prompt}</span>
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button className="px-4 py-2 rounded-lg bg-gray-700/50 text-gray-300 hover:bg-gray-700 transition-colors duration-200 flex items-center gap-2 text-sm">
+              <Code2 className="w-4 h-4" />
+              <span>Export</span>
+            </button>
+            <button className="px-4 py-2 rounded-lg bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 transition-colors duration-200 flex items-center gap-2 text-sm font-medium">
+              <Rocket className="w-4 h-4" />
+              <span>Deploy</span>
+            </button>
+          </div>
+        </div>
       </header>
 
-      <div className="flex-1 overflow-hidden">
-        <div className="h-full grid grid-cols-4 gap-6 p-6">
-          <div className="col-span-1 space-y-6 overflow-auto">
-            <div>
-              <div className="max-h-[75vh] overflow-scroll">
+      {/* Main Content */}
+      <div className="container mx-auto px-6 py-6">
+        <div className="grid grid-cols-12 gap-6 h-[calc(100vh-7rem)]">
+          {/* Left Sidebar - Steps */}
+          <div className="col-span-3 flex flex-col gap-6">
+            <div className="flex-1 bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 overflow-hidden">
+              <div className="p-4 border-b border-gray-700/50">
+                <h2 className="text-gray-200 font-medium flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-purple-400" />
+                  Build Steps
+                </h2>
+              </div>
+              <div className="p-4 overflow-y-auto max-h-[calc(100vh-24rem)]">
                 <StepsList
                   steps={steps}
                   currentStep={currentStep}
                   onStepClick={setCurrentStep}
                 />
               </div>
-              <div>
-                <div className="flex">
-                  <br />
-                  {(loading || !templateSet) && <Loader />}
-                  {!(loading || !templateSet) && (
-                    <div className="flex">
-                      <textarea
-                        value={userPrompt}
-                        onChange={(e) => {
-                          setPrompt(e.target.value);
-                        }}
-                        className="p-2 w-full"
-                      ></textarea>
-                      <button
-                        onClick={async () => {
-                          const newMessage = {
-                            role: "user" as "user",
-                            content: userPrompt,
-                          };
+            </div>
 
-                          setLoading(true);
-                          const stepsResponse = await axios.post(
-                            `${BACKEND_URL}/chat/${model}`,
-                            {
-                              messages: [...llmMessages, newMessage],
-                            }
-                          );
-                          setLoading(false);
-
-                          setLlmMessages((x) => [...x, newMessage]);
-                          setLlmMessages((x) => [
-                            ...x,
-                            {
-                              role: "assistant",
-                              content: stepsResponse.data.response,
-                            },
-                          ]);
-
-                          setSteps((s) => [
-                            ...s,
-                            ...parseXml(stepsResponse.data.response).map(
-                              (x) => ({
-                                ...x,
-                                status: "pending" as "pending",
-                              })
-                            ),
-                          ]);
-                        }}
-                        className="bg-purple-400 px-4"
-                      >
-                        Send
-                      </button>
-                    </div>
-                  )}
+            {/* Chat Input */}
+            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 p-4">
+              {loading || !templateSet ? (
+                <div className="flex items-center justify-center p-4">
+                  <Loader />
                 </div>
-              </div>
+              ) : (
+                <div className="space-y-3">
+                  <textarea
+                    value={userPrompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    placeholder="Type your instructions here..."
+                    className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700/50 rounded-lg text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 resize-none h-24 text-sm"
+                  />
+                  <button
+                    onClick={async () => {
+                      if (!userPrompt.trim()) return;
+
+                      const newMessage = {
+                        role: "user" as "user",
+                        content: userPrompt,
+                      };
+
+                      setLoading(true);
+                      const stepsResponse = await axios.post(
+                        `${BACKEND_URL}/chat/${model}`,
+                        {
+                          messages: [...llmMessages, newMessage],
+                        }
+                      );
+                      setLoading(false);
+
+                      setLlmMessages((x) => [...x, newMessage]);
+                      setLlmMessages((x) => [
+                        ...x,
+                        {
+                          role: "assistant",
+                          content: stepsResponse.data.response,
+                        },
+                      ]);
+
+                      setSteps((s) => [
+                        ...s,
+                        ...parseXml(stepsResponse.data.response).map((x) => ({
+                          ...x,
+                          status: "pending" as "pending",
+                        })),
+                      ]);
+
+                      setPrompt("");
+                    }}
+                    className="w-full px-4 py-2.5 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium transition-colors duration-200 flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={loading || !userPrompt.trim()}
+                  >
+                    <MessageSquarePlus className="w-4 h-4" />
+                    Send Instructions
+                  </button>
+                </div>
+              )}
             </div>
           </div>
-          <div className="col-span-1">
-            <FileExplorer files={files} onFileSelect={setSelectedFile} />
+
+          {/* File Explorer */}
+          <div className="col-span-3 bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 overflow-hidden">
+            <div className="p-4 border-b border-gray-700/50">
+              <h2 className="text-gray-200 font-medium flex items-center gap-2">
+                <Code2 className="w-4 h-4 text-purple-400" />
+                Project Files
+              </h2>
+            </div>
+            <div className="p-4 overflow-y-auto max-h-[calc(100vh-12rem)]">
+              <FileExplorer files={files} onFileSelect={setSelectedFile} />
+            </div>
           </div>
-          <div className="col-span-2 bg-gray-900 rounded-lg shadow-lg p-4 h-[calc(100vh-8rem)]">
-            <TabView activeTab={activeTab} onTabChange={setActiveTab} />
-            <div className="h-[calc(100%-4rem)]">
-              {activeTab === "code" ? (
+
+          {/* Editor/Preview */}
+          <div className="col-span-6 bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 overflow-hidden flex flex-col">
+            <div className="border-b border-gray-700/50">
+              <TabView activeTab={activeTab} onTabChange={setActiveTab} />
+            </div>
+            <div className="flex-1 overflow-hidden">
+              {activeTab === "code" && webContainer ? (
                 <CodeEditor file={selectedFile} />
               ) : (
                 webContainer && (
