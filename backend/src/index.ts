@@ -2,6 +2,7 @@ require("dotenv").config();
 import Anthropic from "@anthropic-ai/sdk";
 import { TextBlock } from "@anthropic-ai/sdk/resources";
 import express, { response } from "express";
+import { Request, Response } from "express";
 import { basePrompt as nodeBasePrompt } from "./defaults/node";
 import { basePrompt as reactBasePrompt } from "./defaults/react";
 import cors from "cors";
@@ -16,7 +17,7 @@ app.use(express.json());
 app.use(cors());
 
 const anthropic = new Anthropic();
-const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY});
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const geminiApiKey = process.env.GEMINI_API_KEY;
 if (!geminiApiKey) {
   throw new Error("GEMINI_API_KEY is not defined");
@@ -71,6 +72,7 @@ app.post("/template", async (req, res) => {
 });
 
 app.post("/chat/anthropic", async (req, res) => {
+  console.log("called anthropic");
   const messages = req.body.messages;
   try {
     const response = await anthropic.messages.create({
@@ -90,6 +92,7 @@ app.post("/chat/anthropic", async (req, res) => {
 });
 
 app.post("/chat/openai", async (req, res) => {
+  console.log("called openai");
   const messages = req.body.messages;
   try {
     const response = await openai.chat.completions.create({
@@ -106,28 +109,47 @@ app.post("/chat/openai", async (req, res) => {
     res.status(500).json({ error: error });
   }
 });
-
-app.post("/chat/gemini", async (req, res) => {
-  const messages = req.body.messages;
+ //@ts-ignore
+app.post("/chat/gemini", async (req,res) => {
+  console.log("called gemini");
   try {
-    const model = gemini.getGenerativeModel({ model: "gemini-pro" });
-    const chat = model.startChat({
-      history: messages.slice(0, -1), // Exclude the last message which is the current prompt
+    const systemPrompt = getSystemPrompt();
+    let messages = req.body.messages;
+
+    if (systemPrompt) {
+      messages = [{ role: "user", content: systemPrompt }, ...messages];
+    }
+    //@ts-ignore
+    const geminiMessages = messages.map(msg => ({
+      role: msg.role,
+      parts: [{ text: msg.content }],
+    }));
+
+    const chat = gemini.getGenerativeModel({ model: "gemini-2.0-flash-exp" }).startChat({
+      history: geminiMessages.slice(0, -1),
     });
 
-    const response = await chat.sendMessage(
-      messages[messages.length - 1].content
-    );
-    const responseText = response.response.text();
+    const lastMessage = geminiMessages[geminiMessages.length - 1];
+
+    if (!lastMessage?.parts?.[0]?.text) {
+      console.error("Invalid last message format:", lastMessage);
+      return res.status(400).json({ error: "Invalid message format" });
+    }
+
+    const response = await chat.sendMessage(lastMessage.parts[0].text);
+    const responseText = await response.response.text();
     saveResponse(responseText);
 
     res.json({ response: responseText });
+    console.log(responseText);
   } catch (error) {
-    res.status(500).json({ error: error });
+    console.error("Gemini API Error:", error);
+    res.status(500).json({ error: error || "An error occurred" });
   }
 });
 
 app.post("/chat/deepseek", async (req, res) => {
+  console.log("called deeepseek");
   const messages = req.body.messages;
   try {
     const response = await deepseek.chat.completions.create({

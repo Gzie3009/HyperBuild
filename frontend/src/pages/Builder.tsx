@@ -227,7 +227,7 @@ export function Builder() {
 
                           setLoading(true);
                           const stepsResponse = await axios.post(
-                            `${BACKEND_URL}/chat`,
+                            `${BACKEND_URL}/chat/${model}`,
                             {
                               messages: [...llmMessages, newMessage],
                             }
