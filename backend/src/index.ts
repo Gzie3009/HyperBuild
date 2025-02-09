@@ -27,6 +27,10 @@ const deepseek = new OpenAI({
   baseURL: "https://api.deepseek.com/v1",
   apiKey: process.env.DEEPSEEK_API_KEY,
 });
+const openrouterDeepseek = new OpenAI({
+  baseURL: "https://openrouter.ai/api/v1",
+  apiKey: process.env.OPENROUTER_API_KEY,
+});
 
 app.post("/template", async (req, res) => {
   console.log("called template");
@@ -109,8 +113,8 @@ app.post("/chat/openai", async (req, res) => {
     res.status(500).json({ error: error });
   }
 });
- //@ts-ignore
-app.post("/chat/gemini", async (req,res) => {
+//@ts-ignore
+app.post("/chat/gemini", async (req, res) => {
   console.log("called gemini");
   try {
     const systemPrompt = getSystemPrompt();
@@ -120,14 +124,16 @@ app.post("/chat/gemini", async (req,res) => {
       messages = [{ role: "user", content: systemPrompt }, ...messages];
     }
     //@ts-ignore
-    const geminiMessages = messages.map(msg => ({
-      role: msg.role,
+    const geminiMessages = messages.map((msg) => ({
+      role: "user",
       parts: [{ text: msg.content }],
     }));
 
-    const chat = gemini.getGenerativeModel({ model: "gemini-2.0-flash-exp" }).startChat({
-      history: geminiMessages.slice(0, -1),
-    });
+    const chat = gemini
+      .getGenerativeModel({ model: "gemini-2.0-flash-exp" })
+      .startChat({
+        history: geminiMessages.slice(0, -1),
+      });
 
     const lastMessage = geminiMessages[geminiMessages.length - 1];
 
@@ -150,18 +156,28 @@ app.post("/chat/gemini", async (req,res) => {
 
 app.post("/chat/deepseek", async (req, res) => {
   console.log("called deeepseek");
-  const messages = req.body.messages;
+  const systemPrompt = getSystemPrompt();
+  let messages = req.body.messages;
+  if (systemPrompt) {
+    messages = [{ role: "user", content: systemPrompt }, ...messages];
+  }
+  // modelnames from openrouter.ai
+  // nvidia/llama-3.1-nemotron-70b-instruct:free // max errors
+  // qwen/qwen2.5-vl-72b-instruct:free  //workinggg
+  // deepseek/deepseek-chat:free //not works sometimes
+  // deepseek/deepseek-r1:free // works most of the times
+  //@ts-ignore
   try {
-    const response = await deepseek.chat.completions.create({
-      messages: messages,
-      model: "deepseek-chat",
-      max_tokens: 8000,
+    const response = await openrouterDeepseek.chat.completions.create({
+      messages,
+      model: "deepseek/deepseek-r1:free ",
+      max_completion_tokens: 16000,
+      temperature:1
     });
-
-    const responseText = response.choices[0].message.content;
-    responseText && saveResponse(responseText);
-
+    console.log(response);
+    const responseText = response.choices[0].message.content?.replace("```", "").replace("```tsx", "").replace("```css", "");
     res.json({ response: responseText });
+    responseText && saveResponse(responseText);
   } catch (error) {
     res.status(500).json({ error: error });
   }
