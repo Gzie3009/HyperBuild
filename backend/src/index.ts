@@ -250,6 +250,10 @@ app.get("/api/shutdown/300903", (req, res) => {
   }, 3000); // Gives time for response before shutting down
 });
 
+app.get("/", (req, res) => {
+  res.send("Server Working fine");
+});
+
 app.listen(3000, () => {
   console.log("Server is running on port 3000");
 });
