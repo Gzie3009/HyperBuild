@@ -9,6 +9,7 @@ interface ModelOption {
   name: string;
   icon: React.ReactNode;
   description: string;
+  disabled?: boolean;
 }
 
 export const Home = () => {
@@ -22,6 +23,7 @@ export const Home = () => {
       name: "OpenAI",
       icon: <Sparkles className="w-6 h-6" />,
       description: "Powerful and versatile AI model with broad capabilities",
+      disabled: true,
     },
     {
       id: "gemini",
@@ -34,12 +36,14 @@ export const Home = () => {
       name: "DeepSeek",
       icon: <Cpu className="w-6 h-6" />,
       description: "Specialized in deep technical understanding",
+      disabled: true,
     },
     {
       id: "anthropic",
       name: "Anthropic",
       icon: <Bot className="w-6 h-6" />,
       description: "Focus on safe and ethical AI interactions",
+      disabled: true,
     },
   ];
 
@@ -82,32 +86,45 @@ export const Home = () => {
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {models.map((model) => (
-                  <button
-                    key={model.id}
-                    type="button"
-                    onClick={() => setSelectedModel(model.id)}
-                    className={`p-4 rounded-xl border transition-all duration-200 flex flex-col items-center text-center ${
-                      selectedModel === model.id
-                        ? "bg-purple-500/20 border-purple-400"
-                        : "bg-white/5 border-white/10 hover:bg-white/10"
-                    }`}
-                  >
-                    <div
-                      className={`mb-2 ${
+                  <div key={model.id} className="relative">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        !model.disabled && setSelectedModel(model.id)
+                      }
+                      className={`p-4 rounded-xl border transition-all duration-200 flex flex-col items-center text-center relative w-full ${
                         selectedModel === model.id
-                          ? "text-purple-300"
-                          : "text-gray-300"
+                          ? "bg-purple-500/20 border-purple-400"
+                          : "bg-white/5 border-white/10 hover:bg-white/10"
+                      } ${
+                        model.disabled ? "cursor-not-allowed opacity-50" : ""
                       }`}
+                      disabled={model.disabled}
                     >
-                      {model.icon}
-                    </div>
-                    <h4 className="font-medium text-white mb-1">
-                      {model.name}
-                    </h4>
-                    <p className="text-xs text-purple-200/70">
-                      {model.description}
-                    </p>
-                  </button>
+                      <div
+                        className={`mb-2 ${
+                          selectedModel === model.id
+                            ? "text-purple-300"
+                            : "text-gray-300"
+                        }`}
+                      >
+                        {model.icon}
+                      </div>
+                      <h4 className="font-medium text-white mb-1">
+                        {model.name}
+                      </h4>
+                      <p className="text-xs text-purple-200/70">
+                        {model.description}
+                      </p>
+                    </button>
+                    {model.disabled && (
+                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-xl">
+                        <p className="text-white text-sm font-medium">
+                          No credits remaining
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
             </div>
